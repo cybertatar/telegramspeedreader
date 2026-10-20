@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 260" font-family="system-ui, sans-serif">
+  <rect width="640" height="260" rx="16" fill="#f7f5f0"/>
+  <g fill="#c9c4b8">
+    <rect x="40" y="150" width="90" height="14" rx="4"/>
+    <rect x="142" y="150" width="56" height="14" rx="4"/>
+    <rect x="210" y="150" width="120" height="14" rx="4"/>
+    <rect x="342" y="150" width="40" height="14" rx="4"/>
+    <rect x="394" y="150" width="104" height="14" rx="4"/>
+    <rect x="510" y="150" width="90" height="14" rx="4"/>
+  </g>
+  <g fill="none" stroke="#2f6fde" stroke-width="2.5" stroke-linecap="round">
+    <path d="M84 132 Q130 70 176 132"/>
+    <path d="M176 132 Q223 70 270 132"/>
+    <path d="M270 132 Q240 90 210 132" stroke="#e5484d" stroke-dasharray="6 6"/>
+    <path d="M270 132 Q358 60 446 132"/>
+    <path d="M446 132 Q500 70 555 132"/>
+  </g>
+  <g fill="#2f6fde">
+    <circle cx="84" cy="157" r="9" opacity=".85"/>
+    <circle cx="176" cy="157" r="9" opacity=".85"/>
+    <circle cx="270" cy="157" r="9" opacity=".85"/>
+    <circle cx="210" cy="157" r="7" fill="#e5484d"/>
+    <circle cx="446" cy="157" r="9" opacity=".85"/>
+    <circle cx="555" cy="157" r="9" opacity=".85"/>
+  </g>
+  <g font-size="17" fill="#3a3a3a">
+    <text x="40" y="214">● фиксация — глаз стоит и читает</text>
+    <text x="40" y="240">⌒ саккада — прыжок, в это время глаз не видит текст</text>
+  </g>
+  <text x="300" y="44" font-size="17" fill="#e5484d">возврат назад</text>
+</svg>
