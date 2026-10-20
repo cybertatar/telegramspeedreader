@@ -4,13 +4,15 @@ Telegram mini app для скорочтения (RSVP) загружаемых к
 
 - Продакшн: https://cybertatar.github.io/telegramspeedreader/ — публикуется сам при каждом
   пуше в `main` (`.github/workflows/deploy.yml`, нужен Settings → Pages → Source: GitHub Actions).
+- Бот — Cloudflare Worker `worker/`, публикуется `.github/workflows/worker.yml` при пуше в `main`
+  (секреты и переменные — в README, «Запуск бота»). Всё бесплатно: своего сервера и базы нет.
 - Превью для согласования: артефакт https://claude.ai/artifact/9eJrQhbpdfwXaSYdkoPk7t (видит только владелец).
 
 ## Как работаем
 
 1. Изменения делаем в отдельной ветке, `main` не трогаем.
 2. Перед пушем в `app/`: `npm test`, `npm run build` (включает `tsc`) и `npm run format:check`
-   без ошибок.
+   без ошибок; в `worker/`: `npm test` и `npm run typecheck`.
 3. Показываем результат в превью-артефакте: `npm run build:preview` собирает один HTML в
    `app/dist-preview/`; из него убрать обёртку документа и скрипт telegram.org (артефакт
    принимает скрипты только с CDN) и опубликовать по тому же URL. `alert`/`confirm` в превью
@@ -22,20 +24,34 @@ Telegram mini app для скорочтения (RSVP) загружаемых к
 
 - `app/` — мини-апп: Vite + TypeScript + Preact.
 - Формат книги — `src/book/types.ts`: главы → блоки (`p`, `h`, `figure`, `code`, `table`).
-  Любой формат приводится к нему; сервер будет отдавать тот же JSON.
+  Любой формат приводится к нему.
 - Движок — `src/engine/`: `stream.ts` превращает книгу в поток (слова + стоп-карточки,
   веса слов, паузы на знаках, страницы, размещение рисунка по первой ссылке в главе),
   `player.ts` — таймер с откатом после паузы и разгоном, `orp.ts` — опорная буква.
 - Интерфейс — `src/ui/`. Главный экран — `Reader.tsx`: сверху текст на паузе (`Context`),
   снизу зона для пальца со словом (`.pad`), внизу прогресс и скорость.
-- Разбор TXT/FB2 в браузере — `src/book/import.ts`. EPUB и PDF — на сервере (план).
-- Хранение: настройки и прогресс — localStorage (`src/store.ts`), книги — IndexedDB.
-- Telegram SDK — только через `src/telegram.ts`; вне Telegram всё работает без него.
-  `disableVerticalSwipes` обязателен: иначе свайп вниз (замедлить) сворачивает приложение.
+- Разбор книг — в браузере, сервера нет: `src/book/import.ts` (TXT, FB2), `epub.ts` (fflate +
+  DOMParser, главы из nav/toc.ncx), `pdf/` (pdf.js грузится лениво: `extract.ts` — текст с
+  координатами и рамки графики, `layout.ts` — чистые функции раскладки: строки, колонки,
+  колонтитулы, абзацы, код по одинаковой ширине символов, формулы, рисунки; `index.ts` — вырезки
+  картинками). Подписи «Рис. N» / «Таблица N» / «Листинг N» забирает `captions.ts`.
+- Раскладку PDF отлаживать на настоящих книгах: `extractPdf` работает в Node с
+  `pdfjs-dist/legacy`, `layoutPdf` — чистая функция (дамп в JSON, затем вывод блоков текстом).
+  Проверено на Pro Git (рус., 541 стр.) и статьях arXiv 1706.03762, 1512.03385.
+- Хранение: настройки и прогресс — localStorage, книги — IndexedDB (`src/store.ts`). В Telegram
+  список книг (`b_<file_unique_id>`) и прогресс (`p_<id>`) дублируются в CloudStorage; id книги из
+  чата — `file_unique_id`. `PARSER_VERSION` поднимать при изменениях разбора: место в книге с
+  другой версией восстанавливается по доле прочитанного.
+- Связь с ботом — `src/cloud.ts` (`VITE_API_URL` при сборке); запросы подписаны initData,
+  Worker проверяет подпись (`worker/src/auth.ts`).
 - Тексты интерфейса — на русском.
 
 ## Статус
 
-- Готово (ветка `claude/youthful-albattani-1mxe2d`): прототип читалки на встроенной книге
-  `src/book/demo.ts` (она же инструкция), загрузка TXT/FB2, тесты движка и разбора.
-- Дальше: сервер + бот (aiogram), разбор EPUB и PDF (PyMuPDF), синхронизация прогресса.
+- Готово (ветка `claude/youthful-albattani-1mxe2d`): читалка на встроенной книге
+  `src/book/demo.ts` (она же инструкция); разбор TXT, FB2, EPUB, PDF в браузере; бот на
+  Cloudflare Workers и синхронизация через CloudStorage Telegram; тесты.
+- Ждёт владельца: создать бота и аккаунт Cloudflare, заполнить секреты (README), проверить на
+  своих PDF.
+- Дальше: OCR сканов (tesseract.js), фоновая вырезка рисунков PDF (книга открывается до того,
+  как готовы все картинки).

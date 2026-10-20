@@ -19,6 +19,15 @@ interface TgWebApp {
   setBackgroundColor?(c: string): void;
   onEvent(e: string, fn: () => void): void;
   BackButton: TgButton;
+  CloudStorage?: {
+    setItem(key: string, value: string, cb?: (err: string | null, ok?: boolean) => void): void;
+    getItems(
+      keys: string[],
+      cb: (err: string | null, values?: Record<string, string>) => void,
+    ): void;
+    removeItems(keys: string[], cb?: (err: string | null, ok?: boolean) => void): void;
+    getKeys(cb: (err: string | null, keys?: string[]) => void): void;
+  };
   HapticFeedback?: {
     impactOccurred(s: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'): void;
     selectionChanged(): void;
@@ -62,3 +71,37 @@ export function setBack(fn: (() => void) | null) {
     tg.BackButton.show();
   } else tg.BackButton.hide();
 }
+
+/** Подпись Telegram для запросов к нашему Worker. */
+export const initData = inTelegram ? tg!.initData : '';
+
+// Облачное хранилище Telegram: до 1024 ключей по 4 КБ у каждого пользователя бота.
+// Список книг и прогресс видны на всех устройствах.
+const cloud = inTelegram && tg?.isVersionAtLeast('6.9') ? tg.CloudStorage : undefined;
+export const hasCloudStorage = !!cloud;
+
+const call = <T>(fn: (cb: (err: string | null, v?: T) => void) => void) =>
+  new Promise<T>((resolve, reject) => fn((err, v) => (err ? reject(new Error(err)) : resolve(v!))));
+
+export const cloudStorage = {
+  async keys(): Promise<string[]> {
+    return cloud ? call<string[]>((cb) => cloud.getKeys(cb)) : [];
+  },
+  async get(keys: string[]): Promise<Record<string, string>> {
+    if (!cloud || !keys.length) return {};
+    // За один запрос — не больше сотни ключей.
+    const out: Record<string, string> = {};
+    for (let i = 0; i < keys.length; i += 100)
+      Object.assign(
+        out,
+        await call<Record<string, string>>((cb) => cloud.getItems(keys.slice(i, i + 100), cb)),
+      );
+    return out;
+  },
+  async set(key: string, value: string) {
+    if (cloud) await call((cb) => cloud.setItem(key, value, cb));
+  },
+  async remove(keys: string[]) {
+    if (cloud && keys.length) await call((cb) => cloud.removeItems(keys, cb));
+  },
+};

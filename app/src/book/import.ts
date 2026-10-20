@@ -188,17 +188,20 @@ export function parseFb2(xml: string): Book {
 
 export type ImportProgress = (text: string, share: number) => void;
 
-export async function importFile(file: File, onProgress?: ImportProgress): Promise<Book> {
-  const ext = file.name.split('.').pop()?.toLowerCase();
-  const bytes = new Uint8Array(await file.arrayBuffer());
+export async function importBytes(
+  bytes: Uint8Array,
+  fileName: string,
+  onProgress?: ImportProgress,
+): Promise<Book> {
+  const ext = fileName.split('.').pop()?.toLowerCase();
   if (ext === 'epub') {
     const { parseEpub } = await import('./epub');
-    return parseEpub(bytes, file.name);
+    return parseEpub(bytes, fileName);
   }
   if (ext === 'pdf') {
     // pdf.js большой — грузим его, только когда открывают PDF.
     const { parsePdf } = await import('./pdf');
-    return parsePdf(bytes, file.name, (stage, done, total) =>
+    return parsePdf(bytes, fileName, (stage, done, total) =>
       onProgress?.(
         stage === 'read'
           ? `Читаю страницу ${done} из ${total}`
@@ -207,7 +210,7 @@ export async function importFile(file: File, onProgress?: ImportProgress): Promi
       ),
     );
   }
-  if (ext === 'txt') return parseTxt(decode(bytes), file.name);
+  if (ext === 'txt') return parseTxt(decode(bytes), fileName);
   if (ext === 'fb2') {
     const head = new TextDecoder('ascii').decode(bytes.slice(0, 200));
     const enc = head.match(/encoding=["']([\w-]+)["']/i)?.[1];

@@ -1,9 +1,7 @@
 import { useRef, useState } from 'preact/hooks';
-import { importFile, UnsupportedFormat } from '../book/import';
-import { ScannedPdf } from '../book/pdf/errors';
-import type { BookMeta } from '../book/types';
 import { DEMO_ID } from '../book/demo';
-import { addBook, loadProgress, removeBook } from '../store';
+import type { BookMeta } from '../book/types';
+import { loadProgress } from '../store';
 import { IconPlus, IconTrash } from './icons';
 
 const FORMAT: Record<BookMeta['format'], string> = {
@@ -16,39 +14,19 @@ const FORMAT: Record<BookMeta['format'], string> = {
 
 export function Library(props: {
   books: BookMeta[];
-  onOpen: (id: string) => void;
-  onChange: () => void;
+  busy: { text: string; share: number } | null;
+  error: string | null;
+  notice: string | null;
+  /** Есть бот: книги синхронизируются через чат. */
+  cloud: boolean;
+  onOpen: (meta: BookMeta) => void;
+  onAdd: (file: File) => void;
+  onRemove: (id: string) => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState<{ text: string; share: number } | null>(null);
-  const [error, setError] = useState<string | null>(null);
   // Удаление в два касания: первое превращает корзину в «Удалить».
   const [confirming, setConfirming] = useState<string | null>(null);
-
-  const onFile = async (e: Event) => {
-    const file = (e.target as HTMLInputElement).files?.[0];
-    (e.target as HTMLInputElement).value = '';
-    if (!file) return;
-    setBusy({ text: 'Открываю файл', share: 0 });
-    setError(null);
-    try {
-      const book = await importFile(file, (text, share) => setBusy({ text, share }));
-      if (!book.chapters.length) throw new Error('В файле не нашлось текста');
-      const meta = await addBook(book);
-      props.onChange();
-      props.onOpen(meta.id);
-    } catch (err) {
-      setError(
-        err instanceof UnsupportedFormat
-          ? 'Этот формат пока не открывается. Подойдут EPUB, FB2, PDF и TXT.'
-          : err instanceof ScannedPdf
-            ? 'В этом PDF нет текста — похоже, это скан. Распознавание сканов добавим позже.'
-            : `Не получилось открыть файл: ${(err as Error).message}`,
-      );
-    } finally {
-      setBusy(null);
-    }
-  };
+  const { busy } = props;
 
   return (
     <div class="library">
@@ -63,7 +41,12 @@ export function Library(props: {
           type="file"
           accept=".epub,.fb2,.pdf,.txt,application/epub+zip,application/pdf,text/plain"
           hidden
-          onChange={onFile}
+          onChange={(e) => {
+            const el = e.target as HTMLInputElement;
+            const file = el.files?.[0];
+            el.value = '';
+            if (file) props.onAdd(file);
+          }}
         />
       </header>
       {busy && (
@@ -74,16 +57,19 @@ export function Library(props: {
           </span>
         </div>
       )}
-      {error && <p class="error">{error}</p>}
+      {props.error && <p class="error">{props.error}</p>}
+      {props.notice && <p class="notice">{props.notice}</p>}
       <ul class="books">
         {props.books.map((b) => {
           const share = loadProgress(b.id)?.share ?? 0;
           return (
             <li>
-              <button class="book" onClick={() => props.onOpen(b.id)}>
+              <button class="book" disabled={!!busy} onClick={() => props.onOpen(b)}>
                 <span class="book-title">{b.title}</span>
                 <span class="book-meta">
-                  {[b.author, FORMAT[b.format]].filter(Boolean).join(' · ')}
+                  {[b.author, FORMAT[b.format], b.remote ? 'скачается из чата' : '']
+                    .filter(Boolean)
+                    .join(' · ')}
                 </span>
                 <span class="book-progress" aria-label={`Прочитано ${Math.round(share * 100)}%`}>
                   <i style={{ width: `${share * 100}%` }} />
@@ -93,10 +79,9 @@ export function Library(props: {
                 (confirming === b.id ? (
                   <button
                     class="btn btn-danger"
-                    onClick={async () => {
+                    onClick={() => {
                       setConfirming(null);
-                      await removeBook(b.id);
-                      props.onChange();
+                      props.onRemove(b.id);
                     }}
                     onBlur={() => setConfirming(null)}
                   >
@@ -116,8 +101,10 @@ export function Library(props: {
         })}
       </ul>
       <p class="library-note">
-        Открываются EPUB, FB2, PDF и TXT. Книга разбирается прямо на телефоне и никуда не
-        отправляется.
+        Открываются EPUB, FB2, PDF и TXT. Книга разбирается прямо на телефоне.
+        {props.cloud
+          ? ' Можно и прислать файл боту в чат — книга появится здесь на всех устройствах.'
+          : ''}
       </p>
     </div>
   );

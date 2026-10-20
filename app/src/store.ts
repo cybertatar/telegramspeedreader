@@ -1,7 +1,9 @@
-// Настройки и прогресс — в localStorage, книги — в IndexedDB (они большие).
-// Позже прогресс переедет на сервер, чтобы читать с телефона и компьютера.
+// Настройки и прогресс — в localStorage, разобранные книги — в IndexedDB (они большие).
+// Внутри Telegram список книг и прогресс дублируются в облачное хранилище Telegram,
+// чтобы на другом устройстве была та же библиотека и то же место в книге.
 
 import { del, get, set } from 'idb-keyval';
+import { cloudStorage, hasCloudStorage } from './telegram';
 import { demoBook, DEMO_ID } from './book/demo';
 import type { Book, BookMeta } from './book/types';
 import type { FiguresMode } from './engine/player';
@@ -26,8 +28,15 @@ export const defaultSettings: Settings = {
   fontSize: 40,
 };
 
+/**
+ * Версия разбора книг. Номер слова в потоке зависит от разбора: если на другом
+ * устройстве версия другая, место восстанавливаем по доле прочитанного.
+ */
+export const PARSER_VERSION = 2;
+
 export interface Progress {
   pos: number;
+  v?: number;
   /** Доля прочитанного, для библиотеки. */
   share: number;
   /** Скорость у каждой книги своя: художественную читают быстрее. */
@@ -59,7 +68,38 @@ export const loadProgress = (id: string): Progress | null => {
   const p = read<Progress | null>(`tsr:pos:${id}`, null);
   return p && typeof p.pos === 'number' ? p : null;
 };
-export const saveProgress = (id: string, p: Progress) => write(`tsr:pos:${id}`, p);
+
+const lastPush = new Map<string, number>();
+/** Прогресс в облако — не чаще раза в 10 секунд на книгу, но всегда на паузе (`force`). */
+export function saveProgress(id: string, p: Progress, force = false) {
+  const progress = { ...p, v: PARSER_VERSION };
+  write(`tsr:pos:${id}`, progress);
+  if (!hasCloudStorage || id === DEMO_ID) return;
+  const now = Date.now();
+  if (!force && now - (lastPush.get(id) ?? 0) < 10000) return;
+  lastPush.set(id, now);
+  cloudStorage.set(`p_${id}`, JSON.stringify(progress)).catch(() => undefined);
+}
+
+/**
+ * Перед открытием книги: если на другом устройстве дочитали дальше по времени —
+ * берём то место. При другой версии разбора — по доле прочитанного.
+ */
+export async function pullProgress(id: string, itemsCount?: number) {
+  if (!hasCloudStorage || id === DEMO_ID) return;
+  try {
+    const raw = (await cloudStorage.get([`p_${id}`]))[`p_${id}`];
+    if (!raw) return;
+    const remote = JSON.parse(raw) as Progress;
+    const local = loadProgress(id);
+    if (local && local.at >= remote.at) return;
+    if (remote.v !== PARSER_VERSION && itemsCount)
+      remote.pos = Math.round(remote.share * (itemsCount - 1));
+    write(`tsr:pos:${id}`, remote);
+  } catch {
+    /* нет сети — читаем с локального места */
+  }
+}
 
 const demoMeta: BookMeta = {
   id: DEMO_ID,
@@ -69,40 +109,108 @@ const demoMeta: BookMeta = {
   addedAt: 0,
 };
 
-export function loadLibrary(): BookMeta[] {
-  let list: BookMeta[] = [];
+const readList = (): BookMeta[] => {
   try {
-    list = JSON.parse(localStorage.getItem('tsr:library') ?? '[]');
+    return JSON.parse(localStorage.getItem('tsr:library') ?? '[]');
   } catch {
-    /* пусто */
+    return [];
   }
-  return [...list.sort((a, b) => b.addedAt - a.addedAt), demoMeta];
+};
+
+export function loadLibrary(): BookMeta[] {
+  return [...readList().sort((a, b) => b.addedAt - a.addedAt), demoMeta];
 }
 
-export async function addBook(book: Book): Promise<BookMeta> {
+/** Запись о книге в облаке Telegram: коротко, ключ `b_<id>` до 4 КБ. */
+interface CloudMeta {
+  t: string;
+  a?: string;
+  f: BookMeta['format'];
+  id: string;
+  n?: string;
+  d: number;
+}
+
+/**
+ * Сливает библиотеку с облаком: книги, добавленные на других устройствах,
+ * появляются в списке (откроются, скачавшись из чата с ботом).
+ */
+export async function syncLibrary(): Promise<BookMeta[]> {
+  if (!hasCloudStorage) return loadLibrary();
+  try {
+    const keys = (await cloudStorage.keys()).filter((k) => k.startsWith('b_'));
+    const values = await cloudStorage.get(keys);
+    const list = readList();
+    const known = new Set(list.map((b) => b.id));
+    for (const [key, raw] of Object.entries(values)) {
+      const id = key.slice(2);
+      if (known.has(id)) continue;
+      try {
+        const m = JSON.parse(raw) as CloudMeta;
+        list.push({
+          id,
+          title: m.t,
+          author: m.a,
+          format: m.f,
+          fileId: m.id,
+          fileName: m.n,
+          addedAt: m.d,
+          remote: true,
+        });
+      } catch {
+        /* битая запись — пропускаем */
+      }
+    }
+    write('tsr:library', list);
+  } catch {
+    /* нет сети — показываем то, что есть на устройстве */
+  }
+  return loadLibrary();
+}
+
+export async function addBook(
+  book: Book,
+  source?: { fileId: string; fileName: string },
+): Promise<BookMeta> {
   await set(`book:${book.id}`, book);
+  const prev = readList().find((b) => b.id === book.id);
   const meta: BookMeta = {
     id: book.id,
     title: book.title,
     author: book.author,
     format: book.format,
-    addedAt: Date.now(),
+    addedAt: prev?.addedAt ?? Date.now(),
+    fileId: source?.fileId ?? prev?.fileId,
+    fileName: source?.fileName ?? prev?.fileName,
   };
-  write('tsr:library', [...loadLibrary().filter((b) => b.id !== DEMO_ID), meta]);
+  write('tsr:library', [...readList().filter((b) => b.id !== book.id), meta]);
+  if (hasCloudStorage && meta.fileId) {
+    const cloud: CloudMeta = {
+      t: meta.title.slice(0, 300),
+      a: meta.author?.slice(0, 200),
+      f: meta.format,
+      id: meta.fileId,
+      n: meta.fileName?.slice(0, 200),
+      d: meta.addedAt,
+    };
+    await cloudStorage.set(`b_${book.id}`, JSON.stringify(cloud)).catch(() => undefined);
+  }
   return meta;
 }
 
+/** Удаляет книгу отовсюду: с устройства и из облачного списка (файл в чате остаётся). */
 export async function removeBook(id: string) {
   await del(`book:${id}`);
   write(
     'tsr:library',
-    loadLibrary().filter((b) => b.id !== id && b.id !== DEMO_ID),
+    readList().filter((b) => b.id !== id),
   );
   try {
     localStorage.removeItem(`tsr:pos:${id}`);
   } catch {
     /* ничего */
   }
+  await cloudStorage.remove([`b_${id}`, `p_${id}`]).catch(() => undefined);
 }
 
 export async function loadBook(id: string): Promise<Book | undefined> {

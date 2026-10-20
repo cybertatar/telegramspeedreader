@@ -1,0 +1,11 @@
+name = "telegramspeedreader"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+
+[vars]
+APP_URL = "https://cybertatar.github.io/telegramspeedreader/"
+
+# Секреты задаются отдельно (их нет в репозитории):
+#   npx wrangler secret put BOT_TOKEN
+#   npx wrangler secret put WEBHOOK_SECRET
+# или через GitHub Actions — см. .github/workflows/worker.yml.

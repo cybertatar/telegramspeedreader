@@ -10,7 +10,7 @@ import {
   type CardItem,
   type Stream,
 } from '../engine/stream';
-import { loadProgress, saveProgress, type Settings } from '../store';
+import { loadProgress, PARSER_VERSION, saveProgress, type Settings } from '../store';
 import { haptic, inTelegram, onDeactivate, setBack } from '../telegram';
 import { CardView } from './CardView';
 import { Context } from './Context';
@@ -67,7 +67,13 @@ export function Reader(props: {
   const saved = useMemo(() => loadProgress(book.id), [book.id]);
   const last = stream.items.length - 1;
 
-  const [pos, setPos] = useState(Math.min(saved?.pos ?? 0, Math.max(0, last)));
+  // Место, сохранённое другой версией разбора, восстанавливаем по доле прочитанного.
+  const start = saved
+    ? saved.v === PARSER_VERSION
+      ? saved.pos
+      : Math.round(saved.share * last)
+    : 0;
+  const [pos, setPos] = useState(Math.max(0, Math.min(start, last)));
   const [wpm, setWpmState] = useState(saved?.wpm ?? settings.wpm);
   const [playing, setPlaying] = useState(false);
   const [reason, setReason] = useState<PauseReason>('jump');
@@ -97,13 +103,18 @@ export function Reader(props: {
 
   const wpmRef = useRef(wpm);
   wpmRef.current = wpm;
-  const save = () =>
-    saveProgress(book.id, {
-      pos: player.pos,
-      share: last > 0 ? player.pos / last : 0,
-      wpm: wpmRef.current,
-      at: Date.now(),
-    });
+  // `force` — сразу и в облако (пауза, сворачивание); при чтении — реже.
+  const save = (force: unknown = true) =>
+    saveProgress(
+      book.id,
+      {
+        pos: player.pos,
+        share: last > 0 ? player.pos / last : 0,
+        wpm: wpmRef.current,
+        at: Date.now(),
+      },
+      !!force,
+    );
 
   useEffect(() => {
     player.settings = { ...settings, wpm };
@@ -144,7 +155,7 @@ export function Reader(props: {
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('pagehide', save);
     onDeactivate(() => player.pause('auto'));
-    const autosave = window.setInterval(() => player.playing && save(), 5000);
+    const autosave = window.setInterval(() => player.playing && save(false), 5000);
 
     return () => {
       off();

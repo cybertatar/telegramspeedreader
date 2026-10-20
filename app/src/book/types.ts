@@ -47,4 +47,9 @@ export interface BookMeta {
   author?: string;
   format: Book['format'];
   addedAt: number;
+  /** Файл в чате с ботом: по нему книгу можно скачать на другом устройстве. */
+  fileId?: string;
+  fileName?: string;
+  /** Книга есть в облачном списке, но на этом устройстве ещё не скачана. */
+  remote?: boolean;
 }

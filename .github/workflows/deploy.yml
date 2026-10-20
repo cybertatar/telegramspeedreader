@@ -30,6 +30,10 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+        env:
+          # Адрес Worker'а бота (переменная репозитория). Без него приложение работает
+          # без синхронизации: книги только на устройстве.
+          VITE_API_URL: ${{ vars.API_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: app/dist

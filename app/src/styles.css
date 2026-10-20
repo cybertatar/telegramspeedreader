@@ -186,6 +186,14 @@ h3 {
   height: 100%;
   background: var(--accent);
 }
+.notice {
+  margin: 0 var(--gap) 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--hint);
+  font-size: 14px;
+}
 .importing {
   display: grid;
   gap: 8px;
