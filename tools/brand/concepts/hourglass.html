@@ -1,0 +1,36 @@
+<!doctype html><meta charset="utf-8" />
+<!-- Песочные часы из букв: сверху ворох, в горлышке одна — красная, внизу строчки книги. -->
+<style>
+  html,body{margin:0} body{width:1024px;height:1024px;overflow:hidden;background:radial-gradient(circle at 50% 40%,#3d2b4f,#1c1426);font-family:'Inter Display',Inter,sans-serif}
+  svg{position:absolute;inset:0}
+  .l{position:absolute;color:#f3efe6;font-weight:600;line-height:1}
+</style>
+<svg viewBox="0 0 1024 1024">
+  <defs><clipPath id="top"><path d="M300 190 H724 Q724 380 540 492 H484 Q300 380 300 190 Z"/></clipPath></defs>
+  <path d="M290 170 H734 M290 854 H734" stroke="#e3a46b" stroke-width="26" stroke-linecap="round"/>
+  <path d="M310 182 Q310 390 490 500 Q310 610 310 842 M714 182 Q714 390 534 500 Q714 610 714 842" fill="none" stroke="#f3efe6" stroke-width="14" stroke-linecap="round" opacity=".9"/>
+  <!-- строчки книги внизу -->
+  <g stroke="#f3efe6" stroke-width="16" stroke-linecap="round" opacity=".85">
+    <path d="M372 800 H652"/><path d="M392 760 H632"/><path d="M420 720 H604"/><path d="M455 680 H569"/>
+  </g>
+</svg>
+<div id="letters"></div>
+<div class="l" style="left:489px;top:470px;font-size:58px;color:#ff6b5e">ч</div>
+<script>
+  // Буквы насыпаны в верхнюю колбу: чем ниже — тем гуще и мельче.
+  const abc = 'абвгдеёжзиклмнопрстуфхцчшщыэюя';
+  let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const box = document.getElementById('letters');
+  for (let i = 0; i < 140; i++) {
+    const y = 200 + rnd() * 250;
+    const t = (y - 190) / 300; // 0..1 сверху вниз
+    const half = 200 * (1 - Math.pow(t, 1.6)) + 18;
+    const x = 512 + (rnd() * 2 - 1) * (half - 26);
+    const s = 34 - t * 12 + rnd() * 6;
+    const el = document.createElement('div');
+    el.className = 'l';
+    el.textContent = abc[Math.floor(rnd() * abc.length)];
+    el.style.cssText = `left:${x - s / 3}px;top:${y - s / 2}px;font-size:${s}px;opacity:${0.45 + rnd() * 0.5};transform:rotate(${(rnd() * 2 - 1) * 35}deg)`;
+    box.appendChild(el);
+  }
+</script>
