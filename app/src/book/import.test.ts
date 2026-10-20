@@ -28,6 +28,7 @@ describe('parseFb2', () => {
   <description><title-info>
     <author><first-name>Анна</first-name><last-name>Иванова</last-name></author>
     <book-title>Сети</book-title>
+    <coverpage><image l:href="#cover"/></coverpage>
   </title-info></description>
   <body>
     <section>
@@ -46,12 +47,14 @@ describe('parseFb2', () => {
     </section>
   </body>
   <binary id="pic" content-type="image/png">iVBORw0KGgo=</binary>
+  <binary id="cover" content-type="image/jpeg">/9j/4AAQ</binary>
 </FictionBook>`;
 
   it('разворачивает части в главы и забирает подпись рисунка', () => {
     const book = parseFb2(fb2);
     expect(book.title).toBe('Сети');
     expect(book.author).toBe('Анна Иванова');
+    expect(book.cover).toBe('data:image/jpeg;base64,/9j/4AAQ');
     expect(book.chapters.map((c) => c.title)).toEqual([
       'Часть первая. Глава 1',
       'Часть первая. Глава 2',

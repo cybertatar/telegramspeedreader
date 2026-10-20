@@ -16,6 +16,7 @@ vi.mock('./telegram', () => ({
 }));
 vi.mock('idb-keyval', () => ({
   get: async (k: string) => idb.get(k),
+  getMany: async (ks: string[]) => ks.map((k) => idb.get(k)),
   set: async (k: string, v: unknown) => void idb.set(k, v),
   del: async (k: string) => void idb.delete(k),
 }));

@@ -19,6 +19,7 @@ function makeEpub() {
 <item id="c1" href="text/ch1.xhtml" media-type="application/xhtml+xml"/>
 <item id="c2" href="text/ch2.xhtml" media-type="application/xhtml+xml"/>
 <item id="pic" href="img/scheme.png" media-type="image/png"/>
+<item id="cov" href="img/cover.jpg" media-type="image/jpeg" properties="cover-image"/>
 </manifest><spine><itemref idref="c1"/><itemref idref="c2"/></spine></package>`),
     'OEBPS/nav.xhtml': strToU8(
       xhtml(`<nav epub:type="toc"><ol>
@@ -41,11 +42,16 @@ function makeEpub() {
 <section id="end"><h1>Глава 3. Итоги</h1><p>Конец.</p></section>`),
     ),
     'OEBPS/img/scheme.png': new Uint8Array(2000).fill(7),
+    'OEBPS/img/cover.jpg': new Uint8Array(3000).fill(9),
   });
 }
 
 describe('parseEpub', () => {
   const book = parseEpub(makeEpub(), 'net.epub');
+
+  it('находит обложку', () => {
+    expect(book.cover?.startsWith('data:image/jpeg;base64,')).toBe(true);
+  });
 
   it('берёт название, автора и главы из оглавления', () => {
     expect(book.title).toBe('Сети для всех');

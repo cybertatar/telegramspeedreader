@@ -2,7 +2,8 @@
 // Внутри Telegram список книг и прогресс дублируются в облачное хранилище Telegram,
 // чтобы на другом устройстве была та же библиотека и то же место в книге.
 
-import { del, get, set } from 'idb-keyval';
+import { del, get, getMany, set } from 'idb-keyval';
+import { thumbnail } from './book/cover';
 import { cloudStorage, hasCloudStorage } from './telegram';
 import { demoBook, DEMO_ID } from './book/demo';
 import type { Book, BookMeta } from './book/types';
@@ -172,6 +173,11 @@ export async function addBook(
   book: Book,
   source?: { fileId: string; fileName: string },
 ): Promise<BookMeta> {
+  // Обложку уменьшаем и храним отдельно: полке не нужно грузить всю книгу.
+  if (book.cover) {
+    book.cover = await thumbnail(book.cover);
+    await set(`cover:${book.id}`, book.cover);
+  }
   await set(`book:${book.id}`, book);
   const prev = readList().find((b) => b.id === book.id);
   const meta: BookMeta = {
@@ -201,6 +207,7 @@ export async function addBook(
 /** Удаляет книгу отовсюду: с устройства и из облачного списка (файл в чате остаётся). */
 export async function removeBook(id: string) {
   await del(`book:${id}`);
+  await del(`cover:${id}`);
   write(
     'tsr:library',
     readList().filter((b) => b.id !== id),
@@ -216,4 +223,25 @@ export async function removeBook(id: string) {
 export async function loadBook(id: string): Promise<Book | undefined> {
   if (id === DEMO_ID) return demoBook;
   return get<Book>(`book:${id}`);
+}
+
+/** Обложки книг, скачанных на это устройство. */
+export async function loadCovers(ids: string[]): Promise<Record<string, string>> {
+  try {
+    const values = await getMany<string | undefined>(ids.map((id) => `cover:${id}`));
+    return Object.fromEntries(ids.flatMap((id, i) => (values[i] ? [[id, values[i]!]] : [])));
+  } catch {
+    return {};
+  }
+}
+
+/** Книга, которую читают сейчас: открывали последней и ещё не дочитали. */
+export function currentBook(books: BookMeta[]): BookMeta | undefined {
+  let best: BookMeta | undefined;
+  let at = 0;
+  for (const b of books) {
+    const p = loadProgress(b.id);
+    if (p && p.at > at && p.share < 0.995) [best, at] = [b, p.at];
+  }
+  return best;
 }

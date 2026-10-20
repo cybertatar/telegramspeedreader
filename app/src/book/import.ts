@@ -173,10 +173,19 @@ export function parseFb2(xml: string): Book {
   }
   for (const sec of sections) collect(sec, '');
 
+  const coverHref = info?.getElementsByTagName('coverpage')[0]?.getElementsByTagName('image')[0];
+  const coverId = (
+    coverHref?.getAttribute('l:href') ??
+    coverHref?.getAttribute('xlink:href') ??
+    coverHref?.getAttributeNS('http://www.w3.org/1999/xlink', 'href') ??
+    ''
+  ).replace(/^#/, '');
+
   const book: Book = {
     id: newId(),
     title,
     author,
+    cover: binaries.get(coverId),
     format: 'fb2',
     pageMode: 'virtual',
     chapters: chapters.filter((c) => c.blocks.length),

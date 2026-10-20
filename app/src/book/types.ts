@@ -37,6 +37,8 @@ export interface Book {
   pageMode: 'virtual' | 'source';
   chapters: Chapter[];
   figures: Record<string, Figure>;
+  /** Обложка: data: URL картинки из книги (у PDF — первая страница). */
+  cover?: string;
   /** Подписи страниц PDF («xii», «147»); индекс — `page - 1`. */
   pageLabels?: string[];
 }

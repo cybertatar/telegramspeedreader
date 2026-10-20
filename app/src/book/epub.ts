@@ -303,10 +303,25 @@ export function parseEpub(bytes: Uint8Array, fileName: string): Book {
     if (first?.type === 'h' && norm(first.text).endsWith(norm(ch.title))) ch.blocks.shift();
   }
 
+  // Обложка: EPUB 3 — `properties="cover-image"`, EPUB 2 — `<meta name="cover" content="id">`.
+  const coverId = byLocal(opf, 'meta')
+    .find((m) => m.getAttribute('name') === 'cover')
+    ?.getAttribute('content');
+  const coverItem =
+    [...manifest.values()].find((m) => m.props.split(' ').includes('cover-image')) ??
+    (coverId ? manifest.get(coverId) : undefined) ??
+    [...manifest.values()].find((m) => m.type.startsWith('image/') && /cover/i.test(m.href));
+  const coverData = coverItem && files[coverItem.href];
+  const cover =
+    coverData && coverItem?.type.startsWith('image/')
+      ? `data:${coverItem.type};base64,${toBase64(coverData)}`
+      : undefined;
+
   const book: Book = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
     title,
     author,
+    cover,
     format: 'epub',
     pageMode: 'virtual',
     // Пустые главы и «Начало» из одной обложки не нужны.
