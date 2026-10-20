@@ -31,6 +31,8 @@ export const DESCRIPTION =
   '• Держите палец на экране — текст идёт, отпустили — пауза. Ничего не убежит, пока вы отвлеклись.\n' +
   '• Скорость от 100 до 1000 слов в минуту, главы и страницы, иллюстрации и код целиком.\n' +
   '• EPUB, FB2, PDF и TXT — просто пришлите файл в чат.';
+/** Имя бота в чатах и профиле (до 64 символов). Username (@…bot) через API не меняется. */
+export const BOT_NAME = 'Vermis librorum (speed reader)';
 export const SHORT_DESCRIPTION =
   'Быстрое чтение книг по одному слову. Пришлите EPUB, FB2, PDF или TXT — и читайте.';
 const WELCOME =
@@ -193,6 +195,7 @@ async function setup(env: Env, origin: string) {
   await api(env, 'setMyCommands', {
     commands: [{ command: 'start', description: 'Как пользоваться' }],
   });
+  await api(env, 'setMyName', { name: BOT_NAME });
   await api(env, 'setMyDescription', { description: DESCRIPTION });
   await api(env, 'setMyShortDescription', { short_description: SHORT_DESCRIPTION });
   return new Response('Готово: вебхук, кнопка меню и команды настроены.', {

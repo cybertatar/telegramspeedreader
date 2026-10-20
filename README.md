@@ -2,10 +2,10 @@
   <img src="docs/brand/avatar.png" width="120" alt="" />
 </p>
 
-<h1 align="center">Быстрое чтение</h1>
+<h1 align="center">Vermis librorum <sub>speed reader</sub></h1>
 
 <p align="center">
-  Telegram-бот и мини-приложение для чтения книг по одному слову.<br />
+  Книжный червь для Telegram: бот и мини-приложение для чтения книг по одному слову.<br />
   Пришлите EPUB, FB2, PDF или TXT — и читайте прямо в Telegram.
 </p>
 

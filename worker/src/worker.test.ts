@@ -86,7 +86,8 @@ describe('бот', () => {
 
 describe('тексты бота', () => {
   it('укладываются в лимиты Telegram', async () => {
-    const { DESCRIPTION, SHORT_DESCRIPTION } = await import('./index');
+    const { BOT_NAME, DESCRIPTION, SHORT_DESCRIPTION } = await import('./index');
+    expect(BOT_NAME.length).toBeLessThanOrEqual(64);
     expect(DESCRIPTION.length).toBeLessThanOrEqual(512);
     expect(SHORT_DESCRIPTION.length).toBeLessThanOrEqual(120);
   });
