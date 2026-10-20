@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Глаз-прицел: в радужке засечки, как в читалке; слева линии скорости. -->
+  <rect width="1024" height="1024" fill="#f3efe6"/>
+  <g stroke="#1f3b57" stroke-width="22" stroke-linecap="round" opacity=".9">
+    <path d="M70 430 H250"/><path d="M110 512 H230"/><path d="M70 594 H250"/>
+  </g>
+  <path d="M220 512 Q560 210 900 512 Q560 814 220 512 Z" fill="#fff" stroke="#1f3b57" stroke-width="30" stroke-linejoin="round"/>
+  <circle cx="560" cy="512" r="170" fill="#2b7de9"/>
+  <circle cx="560" cy="512" r="170" fill="none" stroke="#1f3b57" stroke-width="14"/>
+  <!-- засечки -->
+  <rect x="551" y="342" width="18" height="60" rx="9" fill="#f3efe6"/>
+  <rect x="551" y="622" width="18" height="60" rx="9" fill="#f3efe6"/>
+  <circle cx="560" cy="512" r="78" fill="#16212d"/>
+  <circle cx="560" cy="512" r="30" fill="#ff6b5e"/>
+  <circle cx="606" cy="470" r="18" fill="#fff" opacity=".9"/>
+</svg>

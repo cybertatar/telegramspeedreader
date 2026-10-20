@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Летящая книга: шлейф скорости и вьющаяся красная закладка. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d5c63"/><stop offset="1" stop-color="#1f3b57"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <g stroke="#f3efe6" stroke-linecap="round" opacity=".55">
+    <path d="M120 400 H360" stroke-width="22"/>
+    <path d="M60 500 H330" stroke-width="22"/>
+    <path d="M140 600 H360" stroke-width="22"/>
+  </g>
+  <g transform="rotate(-12 600 500)">
+    <!-- страницы -->
+    <rect x="390" y="330" width="440" height="330" rx="18" fill="#f3efe6"/>
+    <g stroke="#cfc6b3" stroke-width="6"><path d="M400 640 H820"/><path d="M400 622 H820"/></g>
+    <!-- обложка -->
+    <rect x="370" y="300" width="440" height="330" rx="22" fill="#ff6b5e"/>
+    <rect x="370" y="300" width="56" height="330" rx="22" fill="#e04e43"/>
+    <g fill="#fff3df">
+      <rect x="480" y="390" width="260" height="26" rx="13"/>
+      <rect x="480" y="440" width="190" height="26" rx="13"/>
+    </g>
+    <!-- закладка -->
+    <path d="M700 630 L700 760 L735 730 L770 760 L770 630 Z" fill="#f2c14e"/>
+  </g>
+</svg>
