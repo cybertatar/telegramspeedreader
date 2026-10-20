@@ -24,6 +24,22 @@ export const UPLOAD_LIMIT = 50 * 1024 * 1024;
 
 export const FORMATS = ['epub', 'fb2', 'pdf', 'txt'];
 
+// Тексты бота. DESCRIPTION видно в пустом чате до «Старт» (до 512 символов),
+// SHORT_DESCRIPTION — в профиле бота и при пересылке ссылки (до 120).
+export const DESCRIPTION =
+  'Читайте книги быстрее: слова появляются по одному в центре экрана, и глазам не нужно бегать по строке.\n\n' +
+  '• Держите палец на экране — текст идёт, отпустили — пауза. Ничего не убежит, пока вы отвлеклись.\n' +
+  '• Скорость от 100 до 1000 слов в минуту, главы и страницы, иллюстрации и код целиком.\n' +
+  '• EPUB, FB2, PDF и TXT — просто пришлите файл в чат.';
+export const SHORT_DESCRIPTION =
+  'Быстрое чтение книг по одному слову. Пришлите EPUB, FB2, PDF или TXT — и читайте.';
+const WELCOME =
+  'Привет! Пришлите книгу файлом — EPUB, FB2, PDF или TXT, — и под ней появится кнопка «Читать».\n\n' +
+  'Слова показываются по одному в центре экрана. Держите палец внизу экрана — текст идёт, ' +
+  'отпустите — пауза. Скорость меняется свайпом вверх и вниз.\n\n' +
+  'Все ваши книги — в «Библиотеке», кнопка слева от поля ввода. С неё же можно начать: там есть ' +
+  'короткая книга-инструкция.';
+
 const ext = (name: string) => name.split('.').pop()?.toLowerCase() ?? '';
 
 interface TgDocument {
@@ -103,9 +119,7 @@ export async function handleMessage(env: Env, msg: TgMessage) {
   }
   await api(env, 'sendMessage', {
     chat_id,
-    text:
-      'Пришлите книгу файлом — EPUB, FB2, PDF или TXT, — и она появится в библиотеке.\n\n' +
-      'Слова показываются по одному в центре экрана. Держите палец на экране — текст идёт, отпустите — пауза.',
+    text: WELCOME,
     reply_markup: {
       inline_keyboard: [[{ text: 'Открыть библиотеку', web_app: { url: env.APP_URL } }]],
     },
@@ -179,10 +193,8 @@ async function setup(env: Env, origin: string) {
   await api(env, 'setMyCommands', {
     commands: [{ command: 'start', description: 'Как пользоваться' }],
   });
-  await api(env, 'setMyDescription', {
-    description:
-      'Быстрое чтение книг: слова по одному в центре экрана. Пришлите EPUB, FB2, PDF или TXT.',
-  });
+  await api(env, 'setMyDescription', { description: DESCRIPTION });
+  await api(env, 'setMyShortDescription', { short_description: SHORT_DESCRIPTION });
   return new Response('Готово: вебхук, кнопка меню и команды настроены.', {
     headers: { 'content-type': 'text/plain; charset=utf-8' },
   });

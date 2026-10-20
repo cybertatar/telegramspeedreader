@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8" />
+<!-- Аватарка бота 1024×1024. Telegram обрежет её кругом — всё важное в центре. -->
+<style>
+  html, body { margin: 0; }
+  body {
+    width: 1024px; height: 1024px; overflow: hidden;
+    background: radial-gradient(circle at 50% 38%, #2c5279 0%, #1f3b57 55%, #172c42 100%);
+    display: grid; place-items: center;
+    font-family: 'Inter Display', Inter, sans-serif;
+  }
+  .stage { position: relative; width: 1024px; height: 340px; }
+  /* Засечки над и под опорной буквой, как в читалке. */
+  .tick { position: absolute; left: 509px; width: 6px; height: 54px; border-radius: 3px; background: #f3efe6; opacity: .75; }
+  .tick.top { top: 0; } .tick.bottom { bottom: 0; }
+  .line { position: absolute; left: 150px; right: 150px; height: 3px; background: #f3efe6; opacity: .22; }
+  .line.top { top: 26px; } .line.bottom { bottom: 26px; }
+  .word {
+    position: absolute; top: 50%; left: 0; right: 0; transform: translateY(-54%);
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    font-size: 196px; font-weight: 600; letter-spacing: -0.01em; color: #f3efe6; line-height: 1;
+  }
+  .l { text-align: right; } .p { color: #ff6b5e; }
+</style>
+<div class="stage">
+  <i class="line top"></i><i class="line bottom"></i>
+  <i class="tick top"></i><i class="tick bottom"></i>
+  <div class="word"><span class="l">чт</span><span class="p">е</span><span>ние</span></div>
+</div>
+</html>
