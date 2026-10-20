@@ -1,0 +1,27 @@
+<!doctype html><meta charset="utf-8" />
+<!-- Слово-комета: одна чёткая буква впереди, за ней хвост из тающих букв. -->
+<style>
+  html,body{margin:0} body{width:1024px;height:1024px;overflow:hidden;background:linear-gradient(135deg,#1d5c63,#1f3b57 70%);font-family:'Inter Display',Inter,sans-serif}
+  .l{position:absolute;font-weight:700;line-height:1;color:#f3efe6;transform-origin:center}
+  .tick{position:absolute;width:14px;height:56px;border-radius:7px;background:#f3efe6;opacity:.8}
+</style>
+<div id="tail"></div>
+<div class="tick" style="left:625px;top:258px;transform:rotate(-30deg)"></div>
+<div class="tick" style="left:752px;top:592px;transform:rotate(-30deg)"></div>
+<div class="l" style="left:560px;top:330px;font-size:330px;color:#ff6b5e;transform:rotate(-30deg)">ч</div>
+<script>
+  // Хвост: буквы «итаю» уменьшаются, бледнеют и расплываются по диагонали.
+  const word = 'итаюбыстро';
+  const tail = document.getElementById('tail');
+  [...word].forEach((c, i) => {
+    const k = i + 1;
+    const s = 250 * Math.pow(0.78, k);
+    const x = 560 - k * 95 + k * k * 2.2;
+    const y = 360 + k * 62 - k * k * 1.4;
+    const el = document.createElement('div');
+    el.className = 'l';
+    el.textContent = c;
+    el.style.cssText = `left:${x}px;top:${y + (330 - s) * 0.5}px;font-size:${s}px;opacity:${Math.max(0.08, 0.75 - k * 0.08)};filter:blur(${k * 0.9}px);transform:rotate(-30deg)`;
+    tail.appendChild(el);
+  });
+</script>

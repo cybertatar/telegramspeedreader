@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8" />
+<!-- Картинка описания бота 640×360 (её видно в пустом чате): медальон-аватарка
+     и подпись в духе анатомического атласа. Рисуется после avatar.png. -->
+<style>
+  html, body { margin: 0; }
+  body {
+    width: 640px; height: 360px; overflow: hidden; position: relative;
+    background: radial-gradient(circle at 40% 40%, #f3ead5, #e8dbbd 70%, #cdb88f);
+    color: #3a2a1d; font-family: 'Liberation Serif', 'FreeSerif', serif;
+  }
+  .frame { position: absolute; inset: 12px; border: 2px solid #3a2a1d; }
+  .frame::after { content: ''; position: absolute; inset: 5px; border: 1px solid #3a2a1d; }
+  img { position: absolute; left: 34px; top: 30px; width: 300px; height: 300px; border-radius: 50%; }
+  .text { position: absolute; left: 356px; right: 34px; top: 58px; }
+  .tab { font-size: 13px; letter-spacing: 0.25em; }
+  h1 { margin: 6px 0 2px; font-size: 30px; font-weight: 400; font-style: italic; }
+  .ru { font-size: 17px; letter-spacing: 0.04em; }
+  hr { border: 0; border-top: 1px solid #3a2a1d; margin: 14px 0; width: 60px; }
+  p { margin: 0 0 8px; font-size: 16px; line-height: 1.35; }
+  .fmt { font-size: 14px; letter-spacing: 0.08em; }
+</style>
+<div class="frame"></div>
+<img src="../../docs/brand/avatar.png" alt="" />
+<div class="text">
+  <div class="tab">TAB. I · ANATOMIA</div>
+  <h1>Vermis librorum</h1>
+  <div class="ru">книжный червь</div>
+  <hr />
+  <p>Читает книги по одному слову. Держите палец на экране — текст идёт, отпустите — пауза.</p>
+  <p class="fmt">EPUB · FB2 · PDF · TXT</p>
+</div>
+</html>
