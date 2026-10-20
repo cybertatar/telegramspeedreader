@@ -1,6 +1,7 @@
 // Разбор файлов прямо в браузере: TXT и FB2. EPUB и PDF будет разбирать сервер
 // (PDF — PyMuPDF: колонтитулы, переносы, колонки, вырезка формул и схем).
 
+import { attachCaptions } from './captions';
 import type { Block, Book, Chapter, Figure } from './types';
 
 export class UnsupportedFormat extends Error {}
@@ -185,31 +186,27 @@ export function parseFb2(xml: string): Book {
   return book;
 }
 
-const CAPTION = /^(рис(?:унок)?\.?|илл\.?|fig(?:ure)?\.?)\s*(\d+(?:\.\d+)*)[.:]?\s*(.*)$/iu;
+export type ImportProgress = (text: string, share: number) => void;
 
-/**
- * Абзац «Рис. 3.2. Схема…» сразу после картинки — это подпись: забираем номер
- * и текст в иллюстрацию, чтобы ссылки «см. рис. 3.2» на неё работали.
- */
-export function attachCaptions(book: Book) {
-  for (const ch of book.chapters) {
-    for (let i = 0; i < ch.blocks.length; i++) {
-      const b = ch.blocks[i];
-      if (b.type !== 'figure') continue;
-      const next = ch.blocks[i + 1];
-      const m = next?.type === 'p' ? next.text.match(CAPTION) : null;
-      if (!m) continue;
-      const fig = book.figures[b.id];
-      fig.label = m[2];
-      fig.caption = m[3] || fig.caption;
-      ch.blocks.splice(i + 1, 1);
-    }
-  }
-}
-
-export async function importFile(file: File): Promise<Book> {
+export async function importFile(file: File, onProgress?: ImportProgress): Promise<Book> {
   const ext = file.name.split('.').pop()?.toLowerCase();
   const bytes = new Uint8Array(await file.arrayBuffer());
+  if (ext === 'epub') {
+    const { parseEpub } = await import('./epub');
+    return parseEpub(bytes, file.name);
+  }
+  if (ext === 'pdf') {
+    // pdf.js большой — грузим его, только когда открывают PDF.
+    const { parsePdf } = await import('./pdf');
+    return parsePdf(bytes, file.name, (stage, done, total) =>
+      onProgress?.(
+        stage === 'read'
+          ? `Читаю страницу ${done} из ${total}`
+          : `Вырезаю иллюстрации: ${done + 1} из ${total}`,
+        stage === 'read' ? (done / total) * 0.8 : 0.8 + (done / total) * 0.2,
+      ),
+    );
+  }
   if (ext === 'txt') return parseTxt(decode(bytes), file.name);
   if (ext === 'fb2') {
     const head = new TextDecoder('ascii').decode(bytes.slice(0, 200));

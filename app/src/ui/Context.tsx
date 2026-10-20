@@ -64,6 +64,15 @@ export function Context(props: {
         );
       }
       blocks.push(src.type === 'h' ? <h3>{words}</h3> : <p>{words}</p>);
+    } else if (src.type === 'code' && props.cardByBlock.get(b) === undefined) {
+      // Короткая команда, прочитанная в потоке.
+      blocks.push(
+        <div class="ctx-code">
+          <span data-i={sb.start} class={sb.start === cur ? 'w is-current' : 'w'}>
+            {src.text.trim()}
+          </span>
+        </div>,
+      );
     } else {
       const ci = props.cardByBlock.get(b);
       if (ci === undefined) continue;

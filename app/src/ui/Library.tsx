@@ -1,5 +1,6 @@
 import { useRef, useState } from 'preact/hooks';
 import { importFile, UnsupportedFormat } from '../book/import';
+import { ScannedPdf } from '../book/pdf/errors';
 import type { BookMeta } from '../book/types';
 import { DEMO_ID } from '../book/demo';
 import { addBook, loadProgress, removeBook } from '../store';
@@ -19,7 +20,7 @@ export function Library(props: {
   onChange: () => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<{ text: string; share: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Удаление в два касания: первое превращает корзину в «Удалить».
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -28,10 +29,10 @@ export function Library(props: {
     const file = (e.target as HTMLInputElement).files?.[0];
     (e.target as HTMLInputElement).value = '';
     if (!file) return;
-    setBusy(true);
+    setBusy({ text: 'Открываю файл', share: 0 });
     setError(null);
     try {
-      const book = await importFile(file);
+      const book = await importFile(file, (text, share) => setBusy({ text, share }));
       if (!book.chapters.length) throw new Error('В файле не нашлось текста');
       const meta = await addBook(book);
       props.onChange();
@@ -39,11 +40,13 @@ export function Library(props: {
     } catch (err) {
       setError(
         err instanceof UnsupportedFormat
-          ? 'EPUB и PDF научимся открывать на следующем шаге — через сервер. Пока подойдут TXT и FB2.'
-          : `Не получилось открыть файл: ${(err as Error).message}`,
+          ? 'Этот формат пока не открывается. Подойдут EPUB, FB2, PDF и TXT.'
+          : err instanceof ScannedPdf
+            ? 'В этом PDF нет текста — похоже, это скан. Распознавание сканов добавим позже.'
+            : `Не получилось открыть файл: ${(err as Error).message}`,
       );
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   };
 
@@ -51,18 +54,26 @@ export function Library(props: {
     <div class="library">
       <header class="library-head">
         <h1>Книги</h1>
-        <button class="btn btn-primary" disabled={busy} onClick={() => input.current?.click()}>
+        <button class="btn btn-primary" disabled={!!busy} onClick={() => input.current?.click()}>
           <IconPlus />
-          {busy ? 'Открываю…' : 'Добавить'}
+          Добавить
         </button>
         <input
           ref={input}
           type="file"
-          accept=".txt,.fb2,.epub,.pdf,text/plain"
+          accept=".epub,.fb2,.pdf,.txt,application/epub+zip,application/pdf,text/plain"
           hidden
           onChange={onFile}
         />
       </header>
+      {busy && (
+        <div class="importing" role="status">
+          <span>{busy.text}</span>
+          <span class="book-progress">
+            <i style={{ width: `${busy.share * 100}%` }} />
+          </span>
+        </div>
+      )}
       {error && <p class="error">{error}</p>}
       <ul class="books">
         {props.books.map((b) => {
@@ -105,7 +116,8 @@ export function Library(props: {
         })}
       </ul>
       <p class="library-note">
-        Сейчас открываются TXT и FB2. EPUB, PDF и загрузка через бота — скоро.
+        Открываются EPUB, FB2, PDF и TXT. Книга разбирается прямо на телефоне и никуда не
+        отправляется.
       </p>
     </div>
   );

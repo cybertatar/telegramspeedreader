@@ -186,6 +186,21 @@ h3 {
   height: 100%;
   background: var(--accent);
 }
+.importing {
+  display: grid;
+  gap: 8px;
+  margin: 0 var(--gap) 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 14px;
+}
+.importing .book-progress {
+  margin: 0;
+}
+.importing i {
+  transition: width 0.2s;
+}
 .library-note {
   margin: 20px var(--gap) 0;
   color: var(--hint);
@@ -271,6 +286,20 @@ h3 {
 .context .is-current {
   background: var(--mark);
   box-shadow: 0 0 0 2px var(--mark);
+}
+.ctx-code {
+  margin: 0 0 0.8em;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface);
+  font:
+    14px/1.5 ui-monospace,
+    'SF Mono',
+    Menlo,
+    Consolas,
+    monospace;
+  overflow-x: auto;
+  white-space: pre;
 }
 .ctx-card {
   display: flex;
@@ -399,6 +428,12 @@ h3 {
 .word-pivot {
   color: var(--pivot);
 }
+.word-mono {
+  display: block;
+  text-align: center;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-weight: 400;
+}
 .word-card {
   display: block;
   text-align: center;
@@ -470,6 +505,15 @@ h3 {
   border-radius: 50%;
   background: var(--bg);
   border: 2px solid var(--pivot);
+}
+.progress-dot.is-small {
+  top: 0;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border: 0;
+  background: var(--pivot);
+  opacity: 0.6;
 }
 .progress-label {
   position: absolute;

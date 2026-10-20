@@ -3,6 +3,7 @@ import type { Book } from '../book/types';
 import { Player, type PauseReason } from '../engine/player';
 import {
   buildStream,
+  pageLabel,
   readingMs,
   sentenceStartOf,
   stepSentence,
@@ -305,7 +306,8 @@ export function Reader(props: {
         <div class="reader-title">
           <b>{chapter.title}</b>
           <span>
-            стр. {item?.page ?? 1} из {stream.pageCount} · ещё {minutes(left)} в главе
+            стр. {pageLabel(stream, item?.page ?? 1)} из {stream.pageCount} · ещё {minutes(left)} в
+            главе
           </span>
         </div>
         <button class="icon-btn" onClick={() => setSheet('toc')} aria-label="Оглавление">
@@ -362,7 +364,7 @@ export function Reader(props: {
       >
         <div class="stage">
           {item?.kind === 'word' ? (
-            <Word text={item.text} />
+            <Word text={item.text} mono={item.mono} />
           ) : item ? (
             <div class="word word-card">{item.title}</div>
           ) : null}

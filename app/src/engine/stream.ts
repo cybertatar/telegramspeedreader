@@ -6,6 +6,14 @@ import type { Block, Book } from '../book/types';
 export const WORDS_PER_PAGE = 250;
 /** Слова длиннее режутся на части: за один показ глаз длинное слово не схватывает. */
 const MAX_CHUNK = 13;
+/**
+ * Однострочный код короче — не карточка, а один показ в потоке: в технических книгах
+ * таких команд сотни, и останавливаться на каждой невыносимо.
+ */
+export const INLINE_CODE = 40;
+
+export const isInlineCode = (b: Block) =>
+  b.type === 'code' && !b.label && !b.text.includes('\n') && b.text.trim().length <= INLINE_CODE;
 
 export interface WordItem {
   kind: 'word';
@@ -24,6 +32,8 @@ export interface WordItem {
   page: number;
   /** Ключ карточки, на которую слово ссылается («см. рис. 2.1»). */
   mention?: string;
+  /** Короткая команда из книги («$ git init»): показывается целиком моноширинным. */
+  mono?: boolean;
 }
 
 export interface CardItem {
@@ -77,10 +87,12 @@ const ABBREVIATIONS = new Set(
 );
 
 const MENTION =
-  /(?<![\p{L}\p{N}])(рис(?:унок|унка|унке|унку|унком)?\.?|илл\.?|fig(?:ure)?\.?|листинг[а-я]*|listing|табл(?:ица|ицы|ице|ицу|ицей)?\.?|table)\s*(\d+(?:\.\d+)*)/giu;
+  /(?<![\p{L}\p{N}])(рис(?:унок|унка|унке|унку|унком)?\.?|илл\.?|fig(?:ure)?\.?|листинг[а-я]*|listing|табл(?:ица|ицы|ице|ицу|ицей)?\.?|table|eqn?\.?|equation|формул[а-я]*)\s*\(?(\d+(?:\.\d+)*)/giu;
 
-function mentionKind(word: string): CardItem['cardType'] {
+/** Тип ссылки для ключа: у формул свой ряд номеров («Eqn. (1)», «формула (3)»). */
+function mentionKind(word: string): CardItem['cardType'] | 'formula' {
   const w = word.toLowerCase();
+  if (w.startsWith('eq') || w.startsWith('формул')) return 'formula';
   if (w.startsWith('лист') || w.startsWith('list')) return 'code';
   if (w.startsWith('табл') || w.startsWith('table')) return 'table';
   return 'figure';
@@ -158,14 +170,23 @@ export function splitLong(word: string): string[] {
   return parts;
 }
 
-function cardOf(block: Block, book: Book): { type: CardItem['cardType']; label?: string } | null {
-  if (block.type === 'figure') return { type: 'figure', label: book.figures[block.id]?.label };
+function cardOf(
+  block: Block,
+  book: Book,
+): { type: CardItem['cardType']; label?: string; formula?: boolean } | null {
+  if (block.type === 'figure') {
+    // Таблицы и формулы из PDF вырезаны картинками, но называются по-своему.
+    const fig = book.figures[block.id];
+    if (fig?.kind === 'table') return { type: 'table', label: fig.label };
+    return { type: 'figure', label: fig?.label, formula: fig?.kind === 'formula' };
+  }
   if (block.type === 'code' || block.type === 'table')
     return { type: block.type, label: block.label };
   return null;
 }
 
-const keyOf = (type: CardItem['cardType'], label: string) => `${type}:${label}`;
+const keyOf = (type: CardItem['cardType'] | 'formula', label: string) => `${type}:${label}`;
+const keyType = (c: NonNullable<ReturnType<typeof cardOf>>) => (c.formula ? 'formula' : c.type);
 
 export function buildStream(book: Book): Stream {
   const items: Item[] = [];
@@ -181,7 +202,7 @@ export function buildStream(book: Book): Stream {
     const placedAt = new Map<string, number>();
     chapter.blocks.forEach((b, bi) => {
       const c = cardOf(b, book);
-      if (c?.label) placedAt.set(keyOf(c.type, c.label), bi);
+      if (c?.label) placedAt.set(keyOf(keyType(c), c.label), bi);
     });
     const deferred = new Set<string>();
     const firstMention = new Map<string, number>();
@@ -205,14 +226,20 @@ export function buildStream(book: Book): Stream {
 
     const pushCard = (source: Block, blockIndex: number) => {
       const c = cardOf(source, book)!;
-      const key = c.label ? keyOf(c.type, c.label) : `${c.type}@${ci}.${blockIndex}`;
+      const key = c.label ? keyOf(keyType(c), c.label) : `${c.type}@${ci}.${blockIndex}`;
       const [short, long] = KIND_TITLE[c.type];
       sc.cards.push(items.length);
       items.push({
         kind: 'card',
         cardType: c.type,
         key,
-        title: c.label ? `${short} ${c.label}` : long,
+        title: c.formula
+          ? c.label
+            ? `Формула (${c.label})`
+            : 'Формула'
+          : c.label
+            ? `${short} ${c.label}`
+            : long,
         source,
         chapter: ci,
         block: blockIndex,
@@ -269,9 +296,24 @@ export function buildStream(book: Book): Stream {
           if (waiting.length && !inside && (last || SENTENCE_END.test(t.text)))
             for (const key of waiting.splice(0)) pushCard(sourceBlockOf(key), placedAt.get(key)!);
         });
+      } else if (isInlineCode(b)) {
+        const text = (b as { text: string }).text.trim();
+        items.push({
+          kind: 'word',
+          text,
+          ctx: text,
+          chapter: ci,
+          block: bi,
+          sentenceStart: true,
+          weight: 1 + Math.min(2.5, text.length / 8),
+          pause: 1,
+          page: page(),
+          mono: true,
+        });
+        words++;
       } else {
         const c = cardOf(b, book);
-        const key = c?.label ? keyOf(c.type, c.label) : undefined;
+        const key = c?.label ? keyOf(keyType(c), c.label) : undefined;
         if (c && !(key && deferred.has(key))) pushCard(b, bi);
       }
       sb.end = items.length;
@@ -300,7 +342,13 @@ export function buildStream(book: Book): Stream {
   });
 
   const lastPage = items.length ? items[items.length - 1].page : 1;
-  return { book, items, blocks, chapters, pageCount: lastPage, cumWeight, cumPause };
+  const pageCount = book.pageMode === 'source' ? (book.pageLabels?.length ?? lastPage) : lastPage;
+  return { book, items, blocks, chapters, pageCount, cumWeight, cumPause };
+}
+
+/** Подпись страницы: у PDF — как в книге («xii», «147»), иначе номер. */
+export function pageLabel(s: Stream, page: number): string {
+  return s.book.pageLabels?.[page - 1] ?? String(page);
 }
 
 /** Длительность показа элемента в мс. */

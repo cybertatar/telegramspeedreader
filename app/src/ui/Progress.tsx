@@ -1,5 +1,6 @@
 import { useRef, useState } from 'preact/hooks';
-import { chapterAt, sentenceStartOf, type Stream } from '../engine/stream';
+import { notable } from './Toc';
+import { chapterAt, pageLabel, sentenceStartOf, type Stream } from '../engine/stream';
 
 /**
  * Полоса прогресса книги: засечки глав, точки иллюстраций. Её можно тянуть
@@ -17,11 +18,13 @@ export function Progress(props: { stream: Stream; pos: number; onSeek: (i: numbe
     return Math.round(share * n);
   };
 
+  // Иллюстрации на полосе. Когда их сотни (техническая книга), точки мельче.
+  const dots = stream.chapters.flatMap((c) => notable(stream, c.cards));
   const shown = drag ?? props.pos;
   const item = stream.items[shown];
   const label =
     drag !== null && item
-      ? `${stream.chapters[chapterAt(stream, shown)].title} · стр. ${item.page}`
+      ? `${stream.chapters[chapterAt(stream, shown)].title} · стр. ${pageLabel(stream, item.page)}`
       : null;
 
   return (
@@ -50,9 +53,12 @@ export function Progress(props: { stream: Stream; pos: number; onSeek: (i: numbe
         {stream.chapters.slice(1).map((c) => (
           <i class="progress-tick" style={{ left: `${(c.start / n) * 100}%` }} />
         ))}
-        {stream.chapters.flatMap((c) =>
-          c.cards.map((i) => <i class="progress-dot" style={{ left: `${(i / n) * 100}%` }} />),
-        )}
+        {dots.map((i) => (
+          <i
+            class={`progress-dot${dots.length > 40 ? ' is-small' : ''}`}
+            style={{ left: `${(i / n) * 100}%` }}
+          />
+        ))}
       </div>
       {label && <div class="progress-label">{label}</div>}
     </div>

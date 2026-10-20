@@ -14,7 +14,10 @@ export interface Figure {
   /** Номер для ссылок из текста: «1.2» у «Рис. 1.2». */
   label?: string;
   caption?: string;
+  /** Картинка или data: URL. У PDF — вырезка участка страницы. */
   src: string;
+  /** У PDF таблицы и формулы тоже вырезаются картинками. */
+  kind?: 'figure' | 'table' | 'formula';
 }
 
 export interface Chapter {
@@ -34,6 +37,8 @@ export interface Book {
   pageMode: 'virtual' | 'source';
   chapters: Chapter[];
   figures: Record<string, Figure>;
+  /** Подписи страниц PDF («xii», «147»); индекс — `page - 1`. */
+  pageLabels?: string[];
 }
 
 export interface BookMeta {
