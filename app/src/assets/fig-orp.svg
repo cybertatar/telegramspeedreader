@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 240" font-family="system-ui, sans-serif">
+  <rect width="640" height="240" rx="16" fill="#f7f5f0"/>
+  <g stroke="#9a958a" stroke-width="2">
+    <line x1="60" y1="70" x2="580" y2="70"/>
+    <line x1="60" y1="170" x2="580" y2="170"/>
+    <line x1="320" y1="70" x2="320" y2="88"/>
+    <line x1="320" y1="152" x2="320" y2="170"/>
+  </g>
+  <text y="136" font-size="56" fill="#1f1f1f" text-anchor="middle">
+    <tspan x="276">ч</tspan><tspan x="298">т</tspan><tspan x="320" fill="#e5484d">е</tspan><tspan x="347">н</tspan><tspan x="377">и</tspan><tspan x="405">е</tspan>
+  </text>
+  <text x="320" y="214" font-size="17" fill="#3a3a3a" text-anchor="middle">опорная буква всегда стоит под засечками</text>
+</svg>
