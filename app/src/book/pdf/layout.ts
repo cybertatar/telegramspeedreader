@@ -13,6 +13,8 @@ export interface PdfLayout {
   pageLabels: string[];
   /** Сколько страниц без текста — вероятно, скан, нужен OCR. */
   emptyPages: number;
+  /** Название с первой страницы (самая крупная строка) — когда в PDF нет метаданных. */
+  titleGuess?: string;
 }
 
 interface Line {
@@ -455,6 +457,19 @@ const normTitle = (s: string) =>
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
 
+/** Самая крупная строка первой страницы (вместе с продолжением тем же размером). */
+function guessTitle(lines: Line[], body: number): string | undefined {
+  const big = lines.filter((l) => /\p{L}{3}/u.test(l.text) && l.text.length < 150);
+  const max = Math.max(0, ...big.map((l) => l.size));
+  if (max < body * 1.25) return undefined;
+  const title = big
+    .filter((l) => Math.abs(l.size - max) < 0.5)
+    .slice(0, 3)
+    .map((l) => l.text)
+    .join(' ');
+  return title.length >= 4 && title.length <= 200 ? title : undefined;
+}
+
 export function layoutPdf(data: PdfData, fallbackTitle: string): PdfLayout {
   const { body, mono } = analyzeFonts(data);
   const pageLines = data.pages.map((p) => buildLines(p, mono));
@@ -834,5 +849,6 @@ export function layoutPdf(data: PdfData, fallbackTitle: string): PdfLayout {
     crops,
     pageLabels: data.pages.map((p) => p.label),
     emptyPages,
+    titleGuess: guessTitle(pageLines[0] ?? [], body),
   };
 }

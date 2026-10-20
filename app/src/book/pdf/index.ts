@@ -31,11 +31,11 @@ async function loadPdfjs() {
   return pdfjs;
 }
 
-async function renderCrop(doc: PDFDocumentProxy, crop: Crop): Promise<string> {
+async function renderCrop(doc: PDFDocumentProxy, crop: Crop, maxPx = MAX_CROP_PX): Promise<string> {
   const page = await doc.getPage(crop.page + 1);
   const w = crop.x1 - crop.x0;
   const h = crop.bottom - crop.top;
-  const scale = Math.min(2.5, MAX_CROP_PX / w);
+  const scale = Math.min(2.5, maxPx / w);
   const viewport = page.getViewport({ scale });
   const canvas = document.createElement('canvas');
   canvas.width = Math.ceil(w * scale);
@@ -73,9 +73,20 @@ export async function parsePdf(bytes: Uint8Array, fileName: string, onProgress?:
       layout.figures[ids[i]].src = await renderCrop(doc, layout.crops[ids[i]]);
     }
 
+    // Обложка — первая страница: у книг это обложка, у статей — титульный лист.
+    const first = data.pages[0];
+    const cover = first
+      ? await renderCrop(
+          doc,
+          { page: 0, x0: 0, x1: first.width, top: 0, bottom: first.height },
+          360,
+        )
+      : undefined;
+
     const book: Book = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-      title: data.title && data.title.length > 3 ? data.title : title,
+      title: data.title && data.title.length > 3 ? data.title : (layout.titleGuess ?? title),
+      cover,
       author: data.author || undefined,
       format: 'pdf',
       pageMode: 'source',
