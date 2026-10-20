@@ -117,6 +117,20 @@ export function parseEpub(bytes: Uint8Array, fileName: string): Book {
     .map((r) => manifest.get(r.getAttribute('idref') ?? '')?.href)
     .filter((h): h is string => !!h && !!files[h]);
 
+  // Обложка: EPUB 3 — `properties="cover-image"`, EPUB 2 — `<meta name="cover" content="id">`.
+  const coverId = byLocal(opf, 'meta')
+    .find((m) => m.getAttribute('name') === 'cover')
+    ?.getAttribute('content');
+  const coverItem =
+    [...manifest.values()].find((m) => m.props.split(' ').includes('cover-image')) ??
+    (coverId ? manifest.get(coverId) : undefined) ??
+    [...manifest.values()].find((m) => m.type.startsWith('image/') && /cover/i.test(m.href));
+  const coverData = coverItem && files[coverItem.href];
+  const cover =
+    coverData && coverItem?.type.startsWith('image/')
+      ? `data:${coverItem.type};base64,${toBase64(coverData)}`
+      : undefined;
+
   // Оглавление.
   const toc: TocEntry[] = [];
   const navItem = [...manifest.values()].find((m) => m.props.split(' ').includes('nav'));
@@ -206,7 +220,8 @@ export function parseEpub(bytes: Uint8Array, fileName: string): Book {
       if (!src) return;
       const p = resolve(path, src);
       const data = files[p];
-      if (!data || data.length < MIN_IMAGE_BYTES) return;
+      // Обложка уже на полке — в потоке она не нужна (иначе чтение начиналось бы с карточки).
+      if (!data || data.length < MIN_IMAGE_BYTES || p === coverItem?.href) return;
       const ext = p.split('.').pop()?.toLowerCase() ?? '';
       const id = `img${Object.keys(figures).length + 1}`;
       figures[id] = {
@@ -300,22 +315,12 @@ export function parseEpub(bytes: Uint8Array, fileName: string): Book {
       .trim();
   for (const ch of chapters) {
     const first = ch.blocks[0];
-    if (first?.type === 'h' && norm(first.text).endsWith(norm(ch.title))) ch.blocks.shift();
+    // Заголовок бывает и обычным абзацем — его тоже не читаем второй раз.
+    const isTitle =
+      (first?.type === 'h' && norm(first.text).endsWith(norm(ch.title))) ||
+      (first?.type === 'p' && first.text.length < 150 && norm(first.text) === norm(ch.title));
+    if (isTitle) ch.blocks.shift();
   }
-
-  // Обложка: EPUB 3 — `properties="cover-image"`, EPUB 2 — `<meta name="cover" content="id">`.
-  const coverId = byLocal(opf, 'meta')
-    .find((m) => m.getAttribute('name') === 'cover')
-    ?.getAttribute('content');
-  const coverItem =
-    [...manifest.values()].find((m) => m.props.split(' ').includes('cover-image')) ??
-    (coverId ? manifest.get(coverId) : undefined) ??
-    [...manifest.values()].find((m) => m.type.startsWith('image/') && /cover/i.test(m.href));
-  const coverData = coverItem && files[coverItem.href];
-  const cover =
-    coverData && coverItem?.type.startsWith('image/')
-      ? `data:${coverItem.type};base64,${toBase64(coverData)}`
-      : undefined;
 
   const book: Book = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),

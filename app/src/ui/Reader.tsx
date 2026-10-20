@@ -101,6 +101,8 @@ export function Reader(props: {
     // Плеер один на книгу; настройки обновляет эффект ниже.
   }, [stream]);
 
+  // Текущее касание: держать — читать, вверх/вниз — скорость, влево/вправо — предложения.
+  const gesture = useRef<Gesture | null>(null);
   const wpmRef = useRef(wpm);
   wpmRef.current = wpm;
   // `force` — сразу и в облако (пауза, сворачивание); при чтении — реже.
@@ -149,12 +151,18 @@ export function Reader(props: {
 
     // Свернули приложение, выключили экран — чтение встаёт.
     const onHide = () => {
-      if (document.visibilityState === 'hidden') player.pause('auto');
+      if (document.visibilityState === 'hidden') {
+        player.pause('auto');
+        gesture.current = null;
+      }
       save();
     };
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('pagehide', save);
-    onDeactivate(() => player.pause('auto'));
+    onDeactivate(() => {
+      player.pause('auto');
+      gesture.current = null;
+    });
     const autosave = window.setInterval(() => player.playing && save(false), 5000);
 
     return () => {
@@ -240,12 +248,17 @@ export function Reader(props: {
     };
   }, [card, sheet, settings.mode, player]);
 
-  // Жесты на нижней половине экрана: держать — читать, вверх/вниз — скорость,
-  // влево/вправо — предложения.
-  const gesture = useRef<Gesture | null>(null);
+  // Жесты в зоне слова и в нижней зоне. Новое основное касание всегда начинает жест заново: отпускание прошлого могло не
+  // дойти (палец перехватил Telegram или система, приложение свернули с пальцем на экране),
+  // и без этого читалка игнорировала бы касания до перезахода в книгу.
   const onPointerDown = (e: PointerEvent) => {
-    if (gesture.current || card) return;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    if (card || !e.isPrimary) return;
+    const el = e.currentTarget as HTMLElement;
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      /* указатель уже недоступен — жест всё равно начинаем */
+    }
     gesture.current = {
       id: e.pointerId,
       x: e.clientX,
@@ -287,7 +300,7 @@ export function Reader(props: {
   const onPointerCancel = (e: PointerEvent) => {
     if (gesture.current?.id !== e.pointerId) return;
     gesture.current = null;
-    player.pause('user');
+    if (settings.mode === 'hold') player.pause('user');
   };
 
   const item = stream.items[pos];
@@ -298,7 +311,14 @@ export function Reader(props: {
   const glanceCard = glance !== null ? (stream.items[glance] as CardItem) : null;
   const chipCard = chip !== null ? (stream.items[chip] as CardItem) : null;
 
-  const touch = { onPointerDown, onPointerMove, onPointerUp, onPointerCancel };
+  // Захват потерян без отпускания (так бывает при системных жестах) — считаем, что палец убрали.
+  const touch = {
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel,
+    onLostPointerCapture: onPointerCancel,
+  };
 
   let hint = '';
   if (!playing) {
