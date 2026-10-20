@@ -1,34 +1,34 @@
 <!doctype html>
 <html lang="ru">
 <meta charset="utf-8" />
-<!-- Картинка описания бота 640×360: её видно в пустом чате до первого сообщения. -->
+<!-- Картинка описания бота 640×360 (её видно в пустом чате): медальон-аватарка
+     и подпись в духе анатомического атласа. Рисуется после avatar.png. -->
 <style>
   html, body { margin: 0; }
   body {
-    width: 640px; height: 360px; overflow: hidden;
-    background: radial-gradient(circle at 50% 30%, #2c5279 0%, #1f3b57 60%, #172c42 100%);
-    color: #f3efe6; font-family: 'Inter Display', Inter, sans-serif;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    width: 640px; height: 360px; overflow: hidden; position: relative;
+    background: radial-gradient(circle at 40% 40%, #f3ead5, #e8dbbd 70%, #cdb88f);
+    color: #3a2a1d; font-family: 'Liberation Serif', 'FreeSerif', serif;
   }
-  .stage { position: relative; width: 640px; height: 132px; }
-  .tick { position: absolute; left: 318px; width: 4px; height: 22px; border-radius: 2px; background: #f3efe6; opacity: .75; }
-  .tick.top { top: 0; } .tick.bottom { bottom: 0; }
-  .line { position: absolute; left: 110px; right: 110px; height: 2px; background: #f3efe6; opacity: .2; }
-  .line.top { top: 10px; } .line.bottom { bottom: 10px; }
-  .word {
-    position: absolute; top: 50%; left: 0; right: 0; transform: translateY(-54%);
-    display: grid; grid-template-columns: 1fr auto 1fr;
-    font-size: 72px; font-weight: 600; line-height: 1;
-  }
-  .l { text-align: right; } .p { color: #ff6b5e; }
-  h1 { margin: 0; font-size: 30px; font-weight: 600; letter-spacing: -0.01em; }
-  p { margin: -8px 0 0; font: 500 17px Inter, sans-serif; opacity: .7; }
+  .frame { position: absolute; inset: 12px; border: 2px solid #3a2a1d; }
+  .frame::after { content: ''; position: absolute; inset: 5px; border: 1px solid #3a2a1d; }
+  img { position: absolute; left: 34px; top: 30px; width: 300px; height: 300px; border-radius: 50%; }
+  .text { position: absolute; left: 356px; right: 34px; top: 58px; }
+  .tab { font-size: 13px; letter-spacing: 0.25em; }
+  h1 { margin: 6px 0 2px; font-size: 30px; font-weight: 400; font-style: italic; }
+  .ru { font-size: 17px; letter-spacing: 0.04em; }
+  hr { border: 0; border-top: 1px solid #3a2a1d; margin: 14px 0; width: 60px; }
+  p { margin: 0 0 8px; font-size: 16px; line-height: 1.35; }
+  .fmt { font-size: 14px; letter-spacing: 0.08em; }
 </style>
-<div class="stage">
-  <i class="line top"></i><i class="line bottom"></i>
-  <i class="tick top"></i><i class="tick bottom"></i>
-  <div class="word"><span class="l">бы</span><span class="p">с</span><span>тро</span></div>
+<div class="frame"></div>
+<img src="../../docs/brand/avatar.png" alt="" />
+<div class="text">
+  <div class="tab">TAB. I · ANATOMIA</div>
+  <h1>Vermis librorum</h1>
+  <div class="ru">книжный червь</div>
+  <hr />
+  <p>Читает книги по одному слову. Держите палец на экране — текст идёт, отпустите — пауза.</p>
+  <p class="fmt">EPUB · FB2 · PDF · TXT</p>
 </div>
-<h1>Читайте книги по одному слову</h1>
-<p>EPUB · FB2 · PDF · TXT — пришлите файл в чат</p>
 </html>

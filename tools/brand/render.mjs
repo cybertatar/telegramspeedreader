@@ -1,5 +1,6 @@
 // Рисует картинки бота: `node tools/brand/render.mjs` (нужен Playwright с Chromium).
-// Результат — docs/brand/avatar.png и docs/brand/description.png; загружаются в @BotFather.
+// Результат — docs/brand/avatar.png и docs/brand/description.png (описание использует
+// готовую аватарку, поэтому рисуется вторым); загружаются в @BotFather.
 import { chromium } from 'playwright';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +15,7 @@ for (const [name, width, height] of [
   const page = await browser.newPage({ viewport: { width, height } });
   await page.goto(`file://${dir}/${name}.html`);
   await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(300);
   await page.screenshot({ path: `${out}/${name}.png` });
   await page.close();
 }
