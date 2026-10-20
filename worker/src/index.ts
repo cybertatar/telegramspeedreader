@@ -198,9 +198,13 @@ async function setup(env: Env, origin: string) {
   await api(env, 'setMyName', { name: BOT_NAME });
   await api(env, 'setMyDescription', { description: DESCRIPTION });
   await api(env, 'setMyShortDescription', { short_description: SHORT_DESCRIPTION });
-  return new Response('Готово: вебхук, кнопка меню и команды настроены.', {
-    headers: { 'content-type': 'text/plain; charset=utf-8' },
-  });
+  const me = await api<{ username: string }>(env, 'getMe', {});
+  return new Response(
+    `Готово: вебхук, имя, описание, кнопка меню и команды настроены.\nБот: @${me.username}`,
+    {
+      headers: { 'content-type': 'text/plain; charset=utf-8' },
+    },
+  );
 }
 
 export default {

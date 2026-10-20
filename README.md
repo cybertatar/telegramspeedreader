@@ -10,7 +10,6 @@
 </p>
 
 <p align="center">
-  <a href="https://t.me/{{BOT}}"><b>Открыть бота</b></a> ·
   <a href="https://cybertatar.github.io/telegramspeedreader/">Веб-версия</a> ·
   <a href="#как-пользоваться">Как пользоваться</a> ·
   <a href="#как-устроено">Как устроено</a>
@@ -34,7 +33,7 @@
 
 ## Как пользоваться
 
-1. Откройте бота [@{{BOT}}](https://t.me/{{BOT}}) и нажмите «Старт».
+1. Найдите в Telegram бота **Vermis librorum (speed reader)** и нажмите «Старт».
 2. Пришлите книгу файлом — под ней появится кнопка **«📖 Читать»**.
 3. Или откройте **«Библиотеку»** (кнопка слева от поля ввода) и добавьте книгу кнопкой
    «Добавить». Там же есть короткая книга-инструкция.
@@ -98,7 +97,6 @@ Worker только передаёт файлы между Telegram и прил�
 каждого запроса — токен бота наружу не уходит.
 
 Ссылки:
-[бот](https://t.me/{{BOT}}) ·
 [веб-версия](https://cybertatar.github.io/telegramspeedreader/) ·
 [API бота](https://telegramspeedreader.tyncherovmail.workers.dev) ·
 [публикации](https://github.com/cybertatar/telegramspeedreader/actions)
