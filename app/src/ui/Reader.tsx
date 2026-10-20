@@ -298,6 +298,8 @@ export function Reader(props: {
   const glanceCard = glance !== null ? (stream.items[glance] as CardItem) : null;
   const chipCard = chip !== null ? (stream.items[chip] as CardItem) : null;
 
+  const touch = { onPointerDown, onPointerMove, onPointerUp, onPointerCancel };
+
   let hint = '';
   if (!playing) {
     if (reason === 'end') hint = 'Книга закончилась';
@@ -310,7 +312,7 @@ export function Reader(props: {
     <div class={`reader${playing ? ' is-playing' : ''}`}>
       <header class="reader-head">
         {!inTelegram && (
-          <button class="icon-btn" onClick={props.onExit} aria-label="К библиотеке">
+          <button class="icon-btn head-back" onClick={props.onExit} aria-label="К библиотеке">
             <IconBack />
           </button>
         )}
@@ -321,13 +323,19 @@ export function Reader(props: {
             главе
           </span>
         </div>
-        <button class="icon-btn" onClick={() => setSheet('toc')} aria-label="Оглавление">
-          <IconToc />
-        </button>
-        <button class="icon-btn" onClick={() => setSheet('settings')} aria-label="Настройки">
-          <IconSettings />
-        </button>
       </header>
+
+      {/* Слово — в верхней трети, где удобно смотреть; держать палец можно и здесь. */}
+      <div class="stage-zone" style={{ '--word-size': `${settings.fontSize}px` }} {...touch}>
+        <div class="stage">
+          {item?.kind === 'word' ? (
+            <Word text={item.text} mono={item.mono} />
+          ) : item ? (
+            <div class="word word-card">{item.title}</div>
+          ) : null}
+        </div>
+        {toast && <div class="toast">{toast === 'speed' ? `${wpm} слов/мин` : toast}</div>}
+      </div>
 
       <main class="reader-main">
         {!playing && stream.items.length > 0 ? (
@@ -365,36 +373,30 @@ export function Reader(props: {
         )}
       </main>
 
-      <div
-        class="pad"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerCancel}
-        style={{ '--word-size': `${settings.fontSize}px` }}
-      >
-        <div class="stage">
-          {item?.kind === 'word' ? (
-            <Word text={item.text} mono={item.mono} />
-          ) : item ? (
-            <div class="word word-card">{item.title}</div>
-          ) : null}
-        </div>
-        {toast && <div class="toast">{toast === 'speed' ? `${wpm} слов/мин` : toast}</div>}
-        <div class="pad-hint">{hint}</div>
+      {/* Зона для большого пальца — внизу. */}
+      <div class="pad" {...touch}>
+        {hint && <div class="pad-hint">{hint}</div>}
       </div>
 
       <footer class="reader-foot">
         <Progress stream={stream} pos={pos} onSeek={seek} />
-        <div class="speed">
-          <button class="icon-btn" onClick={() => setWpm(wpm - WPM_STEP)} aria-label="Медленнее">
-            <IconMinus />
+        <div class="controls">
+          <button class="icon-btn" onClick={() => setSheet('toc')} aria-label="Оглавление">
+            <IconToc />
           </button>
-          <span>
-            <b>{wpm}</b> слов/мин
-          </span>
-          <button class="icon-btn" onClick={() => setWpm(wpm + WPM_STEP)} aria-label="Быстрее">
-            <IconPlus />
+          <div class="speed">
+            <button class="icon-btn" onClick={() => setWpm(wpm - WPM_STEP)} aria-label="Медленнее">
+              <IconMinus />
+            </button>
+            <span>
+              <b>{wpm}</b> слов/мин
+            </span>
+            <button class="icon-btn" onClick={() => setWpm(wpm + WPM_STEP)} aria-label="Быстрее">
+              <IconPlus />
+            </button>
+          </div>
+          <button class="icon-btn" onClick={() => setSheet('settings')} aria-label="Настройки">
+            <IconSettings />
           </button>
         </div>
       </footer>

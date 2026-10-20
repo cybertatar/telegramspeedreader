@@ -15,8 +15,12 @@ interface TgWebApp {
   expand(): void;
   disableVerticalSwipes?(): void;
   isVersionAtLeast(v: string): boolean;
+  platform: string;
+  isFullscreen?: boolean;
+  requestFullscreen?(): void;
   setHeaderColor?(c: string): void;
   setBackgroundColor?(c: string): void;
+  setBottomBarColor?(c: string): void;
   onEvent(e: string, fn: () => void): void;
   BackButton: TgButton;
   CloudStorage?: {
@@ -46,6 +50,19 @@ export function initTelegram() {
   tg.expand();
   // Иначе свайп вниз для замедления сворачивает мини-апп.
   if (tg.isVersionAtLeast('7.7')) tg.disableVerticalSwipes?.();
+  tg.setHeaderColor?.('bg_color');
+  tg.setBackgroundColor?.('bg_color');
+  if (tg.isVersionAtLeast('7.10')) tg.setBottomBarColor?.('bg_color');
+
+  // Полный экран — только на телефонах: на компьютере он развернул бы окно Telegram.
+  // Сверху остаются кнопки Telegram «Закрыть» и «⋯», шапка приложения встаёт между ними.
+  const markFullscreen = () =>
+    document.documentElement.toggleAttribute('data-fullscreen', !!tg.isFullscreen);
+  if (tg.isVersionAtLeast('8.0') && ['ios', 'android'].includes(tg.platform)) {
+    tg.onEvent('fullscreenChanged', markFullscreen);
+    if (!tg.isFullscreen) tg.requestFullscreen?.();
+    markFullscreen();
+  }
 }
 
 /** Приложение свернули или закрыли шторкой — чтение надо остановить. */

@@ -20,8 +20,17 @@
 
   --radius: 14px;
   --gap: 16px;
-  --safe-top: max(env(safe-area-inset-top), var(--tg-content-safe-area-inset-top, 0px));
-  --safe-bottom: max(env(safe-area-inset-bottom), var(--tg-content-safe-area-inset-bottom, 0px));
+  /* Системные отступы (вырез, полоска «домой») и полоса с кнопками Telegram
+     «Закрыть» и «⋯», которая в полноэкранном режиме лежит поверх приложения. */
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px));
+  --content-top: var(--tg-content-safe-area-inset-top, 0px);
+  --safe-bottom: calc(
+    max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)) +
+      var(--tg-content-safe-area-inset-bottom, 0px)
+  );
+  /* Шапка читалки — в полосе кнопок Telegram, между ними. */
+  --head-h: max(52px, var(--content-top));
+  --head-side: var(--gap);
   color-scheme: light dark;
 }
 
@@ -133,7 +142,7 @@ h3 {
 /* ——— Библиотека ——— */
 
 .library {
-  padding: calc(var(--safe-top) + 12px) 0 calc(var(--safe-bottom) + 24px);
+  padding: calc(var(--safe-top) + var(--content-top) + 12px) 0 calc(var(--safe-bottom) + 24px);
 }
 .library-head {
   display: flex;
@@ -224,20 +233,30 @@ h3 {
   overflow: hidden;
 }
 
+:root[data-fullscreen] {
+  /* Слева «Закрыть» (или «Назад»), справа «⋯» — заголовок не должен под них заходить. */
+  --head-side: 112px;
+}
+
 .reader-head {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: calc(var(--safe-top) + 4px) 4px 4px var(--gap);
-  border-bottom: 1px solid var(--line);
+  justify-content: center;
+  min-height: calc(var(--safe-top) + var(--head-h));
+  padding: var(--safe-top) var(--head-side) 0;
+  text-align: center;
 }
-.reader-head .icon-btn:first-child {
-  margin-left: -12px;
+.head-back {
+  position: absolute;
+  left: 4px;
+  bottom: calc((var(--head-h) - 44px) / 2);
 }
 .reader-title {
   flex: 1;
   min-width: 0;
   display: grid;
+  line-height: 1.3;
 }
 .reader-title b,
 .reader-title span {
@@ -379,20 +398,33 @@ h3 {
 }
 
 /* Нижняя половина: слово и зона для пальца */
-.pad {
+/* Слово стоит в верхней трети экрана: туда удобно смотреть. */
+.stage-zone {
   position: relative;
   flex: 0 0 auto;
-  height: clamp(220px, 42%, 400px);
+  display: grid;
+  align-content: center;
+  height: clamp(130px, 24%, 240px);
+  border-bottom: 1px solid var(--line);
+}
+.is-playing .stage-zone {
+  border-bottom-color: transparent;
+}
+
+/* Зона для большого пальца — внизу. */
+.pad {
+  flex: 0 0 auto;
+  height: clamp(130px, 24%, 240px);
   display: flex;
   flex-direction: column;
+  justify-content: center;
+}
+.stage-zone,
+.pad {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
-  border-top: 1px solid var(--line);
-}
-.is-playing .pad {
-  border-top-color: transparent;
 }
 
 .stage {
@@ -400,7 +432,6 @@ h3 {
   display: grid;
   align-items: center;
   height: calc(var(--word-size) * 2.4);
-  margin-top: 12px;
 }
 /* Засечки над и под опорной буквой — глаз держится за них. */
 .stage::before,
@@ -450,8 +481,10 @@ h3 {
 }
 
 .pad-hint {
-  margin-top: auto;
-  padding: 0 var(--gap) 20px;
+  margin: auto var(--gap);
+  padding: 18px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
   text-align: center;
   color: var(--hint);
   font-size: 15px;
@@ -459,7 +492,7 @@ h3 {
 .toast {
   position: absolute;
   left: 50%;
-  top: calc(var(--word-size) * 2.4 + 28px);
+  bottom: 8px;
   transform: translateX(-50%);
   padding: 6px 14px;
   border-radius: 999px;
@@ -536,11 +569,16 @@ h3 {
   text-overflow: ellipsis;
 }
 
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 .speed {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
   color: var(--hint);
   font-size: 14px;
 }
@@ -571,7 +609,7 @@ h3 {
   animation: slide-up 0.2s ease-out;
 }
 .sheet-full {
-  height: calc(100% - var(--safe-top) - 24px);
+  height: calc(100% - var(--safe-top) - var(--content-top) - 16px);
   max-height: none;
 }
 .sheet-head {
