@@ -33,7 +33,7 @@ export const defaultSettings: Settings = {
  * Версия разбора книг. Номер слова в потоке зависит от разбора: если на другом
  * устройстве версия другая, место восстанавливаем по доле прочитанного.
  */
-export const PARSER_VERSION = 2;
+export const PARSER_VERSION = 3;
 
 export interface Progress {
   pos: number;

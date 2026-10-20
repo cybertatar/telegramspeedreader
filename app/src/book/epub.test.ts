@@ -29,7 +29,7 @@ function makeEpub() {
 </ol></nav>`),
     ),
     'OEBPS/text/ch1.xhtml': strToU8(
-      xhtml(`<h1>Глава 1. Пакеты</h1>
+      xhtml(`<img src="../img/cover.jpg" alt="Обложка"/><h1>Глава 1. Пакеты</h1>
 <p>Данные идут <em>пакетами</em>, см. рис. 1.1 ниже.<a epub:type="noteref" href="#n1">1</a></p>
 <div class="figure"><img src="../img/scheme.png" alt=""/><p>Рис. 1.1. Схема сети</p></div>
 <pre><code>$ ping example.com
@@ -49,8 +49,9 @@ function makeEpub() {
 describe('parseEpub', () => {
   const book = parseEpub(makeEpub(), 'net.epub');
 
-  it('находит обложку', () => {
+  it('находит обложку и не показывает её в тексте карточкой', () => {
     expect(book.cover?.startsWith('data:image/jpeg;base64,')).toBe(true);
+    expect(Object.keys(book.figures)).toHaveLength(1);
   });
 
   it('берёт название, автора и главы из оглавления', () => {
